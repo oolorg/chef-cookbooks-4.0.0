@@ -103,13 +103,38 @@ default["quantum"]["quota_subnet"] = "10"
 default["quantum"]["quota_port"] = "50"
 default["quantum"]["quota_driver"] = "quantum.quota.ConfDriver"
 
+#for_neutron
+default["quantum"]["plugin_config"] = "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini"
+#for_neutron
+
 # Plugin defaults
 # OVS
+#default["quantum"]["ovs"]["packages"] = [
+#  "openvswitch-datapath-dkms",
+#  "quantum-plugin-openvswitch",
+#  "quantum-plugin-openvswitch-agent"
+#]
 default["quantum"]["ovs"]["packages"] = [
-  "openvswitch-datapath-dkms",
   "quantum-plugin-openvswitch",
   "quantum-plugin-openvswitch-agent"
 ]
+
+default["quantum"]["ovs_build"]["packages"] = [
+  "build-essential",
+  "fakeroot",
+  "make",
+  "dpkg",
+  "debhelper",
+  "autoconf",
+  "automake",
+  "libssl-dev",
+  "pkg-config",
+  "python-all",
+  "python-qt4",
+  "python-zopeinterface",
+  "python-twisted-conch"
+]
+
 default["quantum"]["ovs"]["service_name"] = "quantum-plugin-openvswitch-agent"
 default["quantum"]["ovs"]["network_type"] = "vlan"
 default["quantum"]["ovs"]["tunnel_ranges"] = "1:1000"           # Enumerating ranges of GRE tunnel IDs that are available for tenant network allocation (if GRE)
@@ -120,13 +145,130 @@ default["quantum"]["ovs"]["external_interface"] = "eth1"
 
 # Hash of all the provider based networks to create, to add simply added 
 # another interface definition and keys for bridge and vlans
-default["quantum"]["ovs"]["provider_networks"] = {"ph-eth1" =>
+#for_neutron
+default["quantum"]["ovs"]["provider_networks"] = {"ph-eth0" =>
+                                                   { "bridge" => "br-eth0",
+                                                     "vlans" => "1:1000"
+                                                   },
+                                                  "ph-eth1" =>
                                                    { "bridge" => "br-eth1",
                                                      "vlans" => "1:1000"
+                                                   },
+                                                  "ph-eth2" =>
+                                                   { "bridge" => "br-eth2",
+                                                     "vlans" => "1:1000"
+                                                   },
+                                                  "ph-eth3" =>
+                                                   { "bridge" => "br-eth3",
+                                                     "vlans" => "1:1000"
+                                                   },
+                                                  "ph-ex" =>
+                                                   { "bridge" => "br-ex",
+                                                     "vlans" => "1:1000"
                                                    }
-                                                  }
+                                                 }
+#for_neutron
 default["quantum"]["ovs"]["firewall_driver"] =
   "quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver"
+
+#for_neutron
+default["quantum"]["core_plugin"] = "quantum.plugins.openvswitch.ovs_quantum_plugin.OVSQuantumPluginV2"
+
+#NEC Plugin
+#default["quantum"]["nec"]["packages"] = [
+#  "openvswitch-switch",
+#  "openvswitch-datapath-dkms",
+#  "openvswitch-datapath-lts-raring-dkms",
+#  "quantum-plugin-nec",
+#  "quantum-plugin-nec-agent"
+#]
+default["quantum"]["nec"]["packages"] = [
+  "quantum-plugin-nec",
+  "quantum-plugin-nec-agent"
+]
+
+default["quantum"]["trema"]["packages"] = [
+  "git",
+  "gcc",
+  "make",
+  "ruby1.8",
+  "ruby1.8-dev",
+  "rubygems1.8",
+  "libpcap-dev",
+  "libsqlite3-dev",
+  "libglib2.0-dev"
+]
+
+default["quantum"]["sliceable_switch"]["packages"] = [
+  "sqlite3",
+  "libdbi-perl",
+  "libdbd-sqlite3-perl",
+  "apache2",
+  "libjson-perl"
+]
+
+default["quantum"]["nec"]["service_name"] = "quantum-plugin-nec-agent"
+default["quantum"]["nec"]["integration_bridge"] = "br-int"
+default["quantum"]["nec"]["external_bridge"] = "br-ex"
+default["quantum"]["nec"]["firewall_driver"] =
+  "quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver"
+default["quantum"]["nec"]["ofc_host"] = "127.0.0.1"
+default["quantum"]["nec"]["ofc_port"] = "8888"
+#default["quantum"]["nec"]["ofc_ofp_port"] = "6633"
+default["quantum"]["nec"]["ofc_ofp_port"] = "6653"
+default["quantum"]["nec"]["host"] = node["ipaddress"]
+default["quantum"]["nec"]["openflow_interface"] = "none"
+
+
+#Ryu Plugin
+#default["quantum"]["ryu"]["packages"] = [
+#  "openvswitch-switch",
+#  "openvswitch-datapath-dkms",
+#  "quantum-plugin-ryu",
+#  "quantum-plugin-ryu-agent"
+#]
+#
+#default["quantum"]["ryu_app"]["packages"] = [
+#  "openvswitch-switch",
+#  "openvswitch-datapath-dkms",
+#  "git",
+#  "python-pip",
+#  "python-eventlet",
+#  "python-routes",
+#  "python-webob",
+#  "python-paramiko"
+#]
+default["quantum"]["ryu"]["packages"] = [
+  "quantum-plugin-ryu",
+  "quantum-plugin-ryu-agent"
+]
+
+default["quantum"]["ryu_app"]["packages"] = [  "git",
+  "python-pip",
+  "python-eventlet",
+  "python-routes",
+  "python-webob",
+  "python-paramiko"
+]
+
+
+default["quantum"]["ryu"]["service_name"] = "quantum-plugin-ryu-agent"
+default["quantum"]["ryu"]["integration_bridge"] = "br-int"
+default["quantum"]["ryu"]["external_bridge"] = "br-ex"
+default["quantum"]["ryu"]["firewall_driver"] =
+  "quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver"
+default["quantum"]["ryu"]["ofc_host"] = "127.0.0.1"
+default["quantum"]["ryu"]["ofc_port"] = "8080"
+default["quantum"]["ryu"]["ofc_ofp_port"] = "6633"
+default["quantum"]["ryu"]["host"] = node["ipaddress"]
+#for_neutron
+
+
+#for_neutron_lbaas
+default["quantum"]["lbaas"]["enabled"] = "True"
+#for_neutron_lbaas
+
+
 
 case platform
 
@@ -174,6 +316,10 @@ when "ubuntu"
 
     "quantum_metadata_packages" => ["quantum-metadata-agent"],
     "quantum-metadata-agent" => "quantum-metadata-agent",
+#for_neutron_lbaas
+    "quantum_lbaas_packages" => ["quantum-lbaas-agent", "haproxy"],
+    "quantum-lbaas-agent" => "quantum-lbaas-agent",
+#for_neutron_lbaas
 
     "package_overrides" => "-o Dpkg::Options::='--force-confold' "\
       "-o Dpkg::Options::='--force-confdef'"

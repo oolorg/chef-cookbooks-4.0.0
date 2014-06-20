@@ -63,13 +63,43 @@ mysql_info = create_db_and_user(
   node["quantum"]["db"]["password"]
 )
 
+#for_neutron
+neutron_plugin_config_file = node["quantum"]["plugin_config"]
+case node["quantum"]["plugin"]
+when "nec"
+  neutron_plugin_config_file = "/etc/quantum/plugins/nec/nec.ini"
+when "ryu"
+  neutron_plugin_config_file = "/etc/quantum/plugins/ryu/ryu.ini"
+end
+
+template "/etc/default/quantum-server" do
+  source "quantum-server.erb"
+  owner "root"
+  group "root"
+  mode "0640"
+  variables(
+    "db_ip_address" => mysql_info["host"],
+    "neutron_plugin_config" => neutron_plugin_config_file
+  )
+end
+#for_neutron
+
 service "quantum-server" do
   service_name platform_options["quantum_api_service"]
   supports :status => true, :restart => true
   action :enable
   subscribes :restart, "template[/etc/quantum/quantum.conf]", :delayed
   subscribes :restart, "template[/etc/quantum/api-paste.ini]", :delayed
-  subscribes :restart, "template[/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini]", :delayed
+#for_neutron
+  case node["quantum"]["plugin"]
+  when "nec"
+    subscribes :restart, "template[/etc/quantum/plugins/nec/nec.ini]", :delayed
+  when "ryu"
+    subscribes :restart, "template[/etc/quantum/plugins/ryu/ryu.ini]", :delayed
+  else
+    subscribes :restart, "template[/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini]", :delayed
+  end
+#for_neutron
 end
 
 keystone_tenant "Register Service Tenant" do

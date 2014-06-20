@@ -13,6 +13,13 @@ recipe            "quantum-l3-agent", ""
 recipe            "quantum-ovs-plugin", ""
 recipe            "quantum-plugin", ""
 recipe            "quantum-server", ""
+recipe            "quantum-nec-plugin", ""
+recipe            "quantum-trema", ""
+recipe            "quantum-ryu-plugin", ""
+recipe            "quantum-ryu", ""
+recipe            "quantum-ryu-app", ""
+recipe            "quantum-lbaas-agent", ""
+recipe            "quantum-ovs", ""
 
 %w{ centos ubuntu }.each do |os|
   supports os

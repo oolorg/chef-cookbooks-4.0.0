@@ -61,6 +61,22 @@ nova_info =
 metadata_ip =
   nova_info["host"]
 
+#for_neutron
+#template "/etc/quantum/l3_agent.ini" do
+#  source "l3_agent.ini.erb"
+#  owner "root"
+#  group "root"
+#  mode "0644"
+#  variables(
+#    "quantum_external_bridge" => node["quantum"][plugin]["external_bridge"],
+#    "nova_metadata_ip" => metadata_ip,
+#    "quantum_plugin" => node["quantum"]["plugin"],
+#    "l3_router_id" => node["quantum"]["l3"]["router_id"],
+#    "l3_gateway_net_id" => node["quantum"]["l3"]["gateway_external_net_id"]
+#  )
+#  notifies :restart, "service[quantum-l3-agent]", :delayed
+#  notifies :enable, "service[quantum-l3-agent]", :delayed
+#end
 template "/etc/quantum/l3_agent.ini" do
   source "l3_agent.ini.erb"
   owner "root"
@@ -71,8 +87,13 @@ template "/etc/quantum/l3_agent.ini" do
     "nova_metadata_ip" => metadata_ip,
     "quantum_plugin" => node["quantum"]["plugin"],
     "l3_router_id" => node["quantum"]["l3"]["router_id"],
-    "l3_gateway_net_id" => node["quantum"]["l3"]["gateway_external_net_id"]
+    "l3_gateway_net_id" => node["quantum"]["l3"]["gateway_external_net_id"],
+    "ofc_host" => node["quantum"]["ryu"]["ofc_host"],
+    "ofc_port" => node["quantum"]["ryu"]["ofc_port"],
+    "quantum_use_namespaces" => node["quantum"]["use_namespaces"]
   )
   notifies :restart, "service[quantum-l3-agent]", :delayed
   notifies :enable, "service[quantum-l3-agent]", :delayed
 end
+#for_neutron
+

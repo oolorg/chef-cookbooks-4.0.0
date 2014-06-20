@@ -16,6 +16,7 @@
 # limitations under the License.
 
 include_recipe "osops-utils"
+include_recipe "nova-network::quantum-ovs"
 include_recipe "nova-network::quantum-common"
 
 platform_options = node["quantum"]["platform"]

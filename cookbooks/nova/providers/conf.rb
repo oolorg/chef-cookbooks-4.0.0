@@ -93,6 +93,11 @@ action :create do
     network_options["service_quantum_metadata_proxy"] = node[net_provider]["service_quantum_metadata_proxy"]
     network_options["quantum_metadata_proxy_shared_secret"] = quantum_info["quantum_metadata_proxy_shared_secret"]
     network_options["metadata_host"] = metadata_ip
+    #for_neutron
+    if quantum_info["plugin"] == "ryu"
+        network_options["libvirt_ovs_integration_bridge"] = "br-int"
+    end
+    #for_neutron
   end
 
   template node["nova"]["config"]["dnsmasq_config_file"] do

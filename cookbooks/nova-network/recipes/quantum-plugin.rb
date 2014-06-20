@@ -19,4 +19,12 @@
 case node["quantum"]["plugin"]
 when "ovs"
   include_recipe "nova-network::quantum-ovs-plugin"
+
+#for_neutron
+when "nec"
+  include_recipe "nova-network::quantum-nec-plugin" 
+
+when "ryu"
+  include_recipe "nova-network::quantum-ryu-plugin" 
+#for_neutron
 end

@@ -1,0 +1,57 @@
+#!/bin/sh
+
+MY_TENANT_ID=$1
+
+MY_EXT_NET_NAME="public"
+MY_EXT_NET_PH="ph-ex"
+MY_EXT_NET_SUBNET="public_sub1"
+MY_EXT_NET_IP_POOL="172.16.100.0/24"
+MY_EXT_NET_IP_START="172.16.100.192"
+MY_EXT_NET_IP_END="172.16.100.224"
+MY_EXT_NET_GATEWAY="172.16.100.1"
+
+MY_INT_NET_TYPE="gre"
+MY_INT_NET_NAME="private1"
+MY_INT_NET_SEG_ID="101"
+MY_INT_NET_SUBNET="private1_sub1"
+MY_INT_NET_IP_POOL="10.0.0.0/24"
+
+MY_ROUTER_NAME="router01"
+
+if [ $# -lt 1 ] ; then
+  mycommand=$0
+  echo "Usage: ${mycommand} tenant-id"
+  echo "ex: \$ keystone tenant-list"
+  echo "    +----------------------------------+---------+---------+"
+  echo "    |                id                |   name  | enabled |"
+  echo "    +----------------------------------+---------+---------+"
+  echo "    | bf944c9f6f2241efb3735c737e9e236b |  admin  |   True  |"
+  echo "    | 2d9abf3e97f44475884359c1675e3990 | service |   True  |"
+  echo "    +----------------------------------+---------+---------+"
+  echo "    \$ ${mycommand} bf944c9f6f2241efb3735c737e9e236b "
+  exit 1
+fi
+
+
+#external network
+#quantum net-create --tenant-id ${MY_TENANT_ID} ${MY_EXT_NET_NAME} 
+quantum net-create --tenant-id ${MY_TENANT_ID} ${MY_EXT_NET_NAME} --router:external=True
+
+#quantum subnet-create --ip_version 4 --tenant-id ${MY_TENANT_ID} --name ${MY_EXT_NET_SUBNET}  --gateway  ${MY_EXT_NET_GATEWAY} ${MY_EXT_NET_NAME} ${MY_EXT_NET_IP_POOL} 
+
+quantum subnet-create --tenant-id ${MY_TENANT_ID} --name ${MY_EXT_NET_SUBNET} --allocation-pool start=${MY_EXT_NET_IP_START},end=${MY_EXT_NET_IP_END} ${MY_EXT_NET_NAME} ${MY_EXT_NET_IP_POOL} --enable_dhcp False --gateway ${MY_EXT_NET_GATEWAY}
+
+
+#internal network
+#quantum net-create --tenant-id ${MY_TENANT_ID} ${MY_INT_NET_NAME} --provider:network_type ${MY_INT_NET_TYPE} --provider:segmentation_id ${MY_INT_NET_SEG_ID}
+quantum net-create --tenant-id ${MY_TENANT_ID} ${MY_INT_NET_NAME} 
+
+#quantum subnet-create --tenant-id ${MY_TENANT_ID} --name ${MY_INT_NET_SUBNET} ${MY_INT_NET_NAME} ${MY_INT_NET_IP_POOL}
+quantum subnet-create --tenant-id ${MY_TENANT_ID} --name ${MY_INT_NET_SUBNET} ${MY_INT_NET_NAME} ${MY_INT_NET_IP_POOL}
+
+#router
+quantum router-create --tenant-id ${MY_TENANT_ID} ${MY_ROUTER_NAME}
+quantum router-gateway-set ${MY_ROUTER_NAME} ${MY_EXT_NET_NAME}
+quantum router-interface-add ${MY_ROUTER_NAME} ${MY_INT_NET_SUBNET}
+
+

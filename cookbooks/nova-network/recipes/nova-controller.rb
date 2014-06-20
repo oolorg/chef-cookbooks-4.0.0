@@ -18,8 +18,25 @@
 #
 
 if node["nova"]["network"]["provider"] == "quantum"
+  case node["quantum"]["plugin"] 
+  when "nec"
+    include_recipe "nova-network::quantum-trema"
+  when "ryu"
+    include_recipe "nova-network::quantum-ryu"
+  end
   include_recipe "nova::api-metadata"
   include_recipe "nova-network::quantum-server"
+  include_recipe "nova-network::quantum-plugin"
+  include_recipe "nova-network::quantum-dhcp-agent"
+  include_recipe "nova-network::quantum-l3-agent"
+  if node["quantum"]["lbaas"]["enabled"] == "True"
+    include_recipe "nova-network::quantum-lbaas-agent"
+  end
+  case node["quantum"]["plugin"] 
+  when "ryu"
+    include_recipe "nova-network::quantum-ryu-app"
+  end
+
 else
   include_recipe "nova-network::nova-setup"
 end

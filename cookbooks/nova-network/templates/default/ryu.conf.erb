@@ -1,0 +1,14 @@
+[DEFAULT]
+app_lists=ryu.app.gre_tunnel,ryu.app.quantum_adapter,ryu.app.rest,ryu.app.rest_conf_switch,ryu.app.rest_tunnel,ryu.app.tunnel_port_updater,ryu.app.rest_quantum
+wsapi_host=<%= @ofc_host %>
+wsapi_port=<%= @ofc_port %>
+ofp_listen_host=<%= @ofc_host %>
+ofp_tcp_listen_port=<%= @ofc_ofp_port %>
+quantum_url=http://127.0.0.1:9696
+quantum_admin_username=<%= @service_user %>
+quantum_admin_password=<%= @service_pass %>
+quantum_admin_tenant_name=<%= @service_tenant_name %>
+quantum_admin_auth_url=<%= @keystone_protocol %>://<%= @keystone_api_ipaddress %>:<%= @keystone_admin_port %><%= @keystone_path %>
+quantum_auth_strategy=keystone
+quantum_controller_addr=tcp:<%= @ofc_host %>:<%= @ofc_ofp_port %>
+

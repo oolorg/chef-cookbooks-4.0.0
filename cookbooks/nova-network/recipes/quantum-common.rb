@@ -49,6 +49,21 @@ vlan_ranges = node["quantum"]["ovs"]["provider_networks"].
 bridge_mappings = node["quantum"]["ovs"]["provider_networks"].
   collect { |k,v| "#{k}:#{v['bridge']}"}.join(',')
 
+#for_neutron
+plugin = node["quantum"]["plugin"]
+neutron_core_plugin = node["quantum"]["core_plugin"]
+neutron_plugin_config_file = node["quantum"]["plugin_config"]
+
+case plugin
+when "nec"
+  neutron_core_plugin = "quantum.plugins.nec.nec_plugin.NECPluginV2"
+  neutron_plugin_config_file = "/etc/quantum/plugins/nec/nec.ini"
+when "ryu"
+  neutron_core_plugin = "quantum.plugins.ryu.ryu_quantum_plugin.RyuQuantumPluginV2"
+  neutron_plugin_config_file = "/etc/quantum/plugins/ryu/ryu.ini"
+end
+#for_neutron
+
 # Make sure our permissions are not too, well, permissive
 directory "/etc/quantum/" do
   action :create
@@ -57,15 +72,22 @@ directory "/etc/quantum/" do
   mode "750"
 end
 
-# *-controller role by itself won't install the OVS plugin, despite
-# quantum-server requiring the plugin's config file, so... make go
-directory "/etc/quantum/plugins/openvswitch" do
-  action :create
-  owner "root"
-  group "quantum"
-  mode "750"
-  recursive true
+#for_neutron
+case plugin
+when "ovs"
+
+  # *-controller role by itself won't install the OVS plugin, despite
+  # quantum-server requiring the plugin's config file, so... make go
+  directory "/etc/quantum/plugins/openvswitch" do
+    action :create
+    owner "root"
+    group "quantum"
+    mode "750"
+    recursive true
+  end
+
 end
+#for_neutron
 
 template "/etc/quantum/quantum.conf" do
   source "quantum.conf.erb"
@@ -95,6 +117,11 @@ template "/etc/quantum/quantum.conf" do
     "keystone_api_ipaddress" => ks_admin_endpoint["host"],
     "dhcp_lease_time" => node["quantum"]["dhcp_lease_time"],
     "keystone_admin_port" => ks_admin_endpoint["port"],
+#for_neutron
+#    "core_plugin" => node["quantum"]["core_plugin"],
+    "neutron_core_plugin" => neutron_core_plugin,
+    "lbaas_enabled" => node["quantum"]["lbaas"]["enabled"],
+#for_neutron
     "keystone_path" => ks_admin_endpoint["path"]
   )
 end
@@ -114,25 +141,146 @@ template "/etc/quantum/api-paste.ini" do
   )
 end
 
-template "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini" do
-  source "ovs_quantum_plugin.ini.erb"
+#for_neutron
+case plugin
+
+when "ovs"
+
+  template "/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini" do
+    source "ovs_quantum_plugin.ini.erb"
+    owner "root"
+    group "quantum"
+    mode "0640"
+    variables(
+      "db_ip_address" => mysql_info["host"],
+      "db_user" => quantum_info["db"]["username"],
+      "db_password" => quantum_info["db"]["password"],
+      "db_name" => quantum_info["db"]["name"],
+      "ovs_firewall_driver" => node["quantum"]["ovs"]["firewall_driver"],
+      "ovs_network_type" => node["quantum"]["ovs"]["network_type"],
+      "ovs_tunnel_ranges" => node["quantum"]["ovs"]["tunnel_ranges"],
+      "ovs_integration_bridge" => node["quantum"]["ovs"]["integration_bridge"],
+      "ovs_tunnel_bridge" => node["quantum"]["ovs"]["tunnel_bridge"],
+      "ovs_vlan_range" => vlan_ranges,
+      "ovs_bridge_mapping" => bridge_mappings,
+      "ovs_debug" => node["quantum"]["debug"],
+      "ovs_verbose" => node["quantum"]["verbose"],
+      "ovs_local_ip" => local_ip
+    )
+  end
+
+when "nec"
+
+  directory "/etc/quantum/plugins/nec" do
+    action :create
+    owner "root"
+    group "quantum"
+    mode "750"
+    recursive true
+  end
+  template "/etc/quantum/plugins/nec/nec.ini" do
+    source "nec.ini.erb"
+    owner "root"
+    group "quantum"
+    mode "0640"
+    variables(
+      "db_ip_address" => mysql_info["host"],
+      "db_user" => quantum_info["db"]["username"],
+      "db_password" => quantum_info["db"]["password"],
+      "db_name" => quantum_info["db"]["name"],
+      "ofc_host" => node["quantum"]["nec"]["ofc_host"],
+      "ofc_port" => node["quantum"]["nec"]["ofc_port"],
+      "ovs_firewall_driver" => node["quantum"]["nec"]["firewall_driver"],
+      "ovs_integration_bridge" => node["quantum"]["nec"]["integration_bridge"]
+    )
+  end
+
+when "ryu"
+
+  directory "/etc/quantum/plugins/ryu" do
+    action :create
+    owner "root"
+    group "quantum"
+    mode "750"
+    recursive true
+  end
+  template "/etc/quantum/plugins/ryu/ryu.ini" do
+    source "ryu.ini.erb"
+    owner "root"
+    group "quantum"
+    mode "0640"
+    variables(
+      "db_ip_address" => mysql_info["host"],
+      "db_user" => quantum_info["db"]["username"],
+      "db_password" => quantum_info["db"]["password"],
+      "db_name" => quantum_info["db"]["name"],
+      "ofc_host" => node["quantum"]["ryu"]["ofc_host"],
+      "ofc_port" => node["quantum"]["ryu"]["ofc_port"],
+      "ovs_integration_bridge" => node["quantum"]["ryu"]["integration_bridge"],
+      "tunnel_interface" => node["quantum"]["ryu"]["tunnel_if"],
+    )
+  end
+
+  directory "/etc/ryu" do
+    action :create
+    owner "root"
+    group "root"
+    mode "755"
+    recursive true
+  end
+
+  template "/etc/ryu/ryu.conf" do
+    source "ryu.conf.erb"
+    owner "root"
+    group "quantum"
+    mode "0640"
+    variables(
+      "db_ip_address" => mysql_info["host"],
+      "db_user" => quantum_info["db"]["username"],
+      "db_password" => quantum_info["db"]["password"],
+      "db_name" => quantum_info["db"]["name"],
+      "ofc_host" => node["quantum"]["ryu"]["ofc_host"],
+      "ofc_port" => node["quantum"]["ryu"]["ofc_port"],
+      "ofc_ofp_port" => node["quantum"]["ryu"]["ofc_ofp_port"],
+      "service_user" => quantum_info["service_user"],
+      "service_pass" => quantum_info["service_pass"],
+      "service_tenant_name" => quantum_info["service_tenant_name"],
+      "keystone_protocol" => ks_admin_endpoint["scheme"],
+      "keystone_api_ipaddress" => ks_admin_endpoint["host"],
+      "keystone_admin_port" => ks_admin_endpoint["port"],
+      "keystone_path" => ks_admin_endpoint["path"]
+    )
+  end
+
+end
+
+template "/root/netcreate.sh" do
+  source "netcreate.sh.erb"
   owner "root"
   group "quantum"
-  mode "0640"
+  mode "0777"
   variables(
-    "db_ip_address" => mysql_info["host"],
-    "db_user" => quantum_info["db"]["username"],
-    "db_password" => quantum_info["db"]["password"],
-    "db_name" => quantum_info["db"]["name"],
-    "ovs_firewall_driver" => node["quantum"]["ovs"]["firewall_driver"],
-    "ovs_network_type" => node["quantum"]["ovs"]["network_type"],
-    "ovs_tunnel_ranges" => node["quantum"]["ovs"]["tunnel_ranges"],
-    "ovs_integration_bridge" => node["quantum"]["ovs"]["integration_bridge"],
-    "ovs_tunnel_bridge" => node["quantum"]["ovs"]["tunnel_bridge"],
-    "ovs_vlan_range" => vlan_ranges,
-    "ovs_bridge_mapping" => bridge_mappings,
-    "ovs_debug" => node["quantum"]["debug"],
-    "ovs_verbose" => node["quantum"]["verbose"],
-    "ovs_local_ip" => local_ip
   )
 end
+
+template "/root/securityadd.sh" do
+  source "securityadd.sh.erb"
+  owner "root"
+  group "quantum"
+  mode "0777"
+  variables(
+  )
+end
+
+template "/root/gre_target_set.sh" do
+  source "gre_target_set.sh.erb"
+  owner "root"
+  group "quantum"
+  mode "0777"
+  variables(
+  )
+end
+#for_neutron
+
+
+

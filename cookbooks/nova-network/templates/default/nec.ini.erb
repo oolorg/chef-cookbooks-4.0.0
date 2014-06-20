@@ -1,0 +1,24 @@
+[DATABASE]
+sql_connection = mysql://<%= @db_user %>:<%= @db_password %>@<%= @db_ip_address %>/<%= @db_name %>
+reconnect_interval = 2
+
+[OVS]
+integration_bridge = <%= @ovs_integration_bridge %>
+
+[AGENT]
+polling_interval = 2
+#root_helper = sudo /usr/local/bin/quantum-rootwrap /etc/quantum/rootwrap.conf
+
+[SECURITYGROUP]
+firewall_driver = <%= @ovs_firewall_driver %>
+
+[OFC]
+host = <%= @ofc_host %>
+port = <%= @ofc_port %>
+driver = trema
+enable_packet_filter = true
+api_retry_max = 0
+api_retry_interval = 1
+
+
+

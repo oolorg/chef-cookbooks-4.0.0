@@ -18,6 +18,11 @@
 #
 
 if node["nova"]["network"]["provider"] == "quantum"
+  case node["quantum"]["plugin"] 
+  when "ryu"
+    include_recipe "nova-network::quantum-ryu"
+  end
+
   include_recipe "nova-network::quantum-plugin"
   include_recipe "sysctl::default"
 

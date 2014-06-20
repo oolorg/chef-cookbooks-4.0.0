@@ -1,0 +1,13 @@
+#!/bin/sh
+
+LOGGING_LEVEL=<%= @neutron_trema_log_level %> TREMA_TMP=<%= @neutron_trema_temp_dir %> /usr/local/bin/trema run -d -c <%= @neutron_trema_ss_config %>
+sleep 10
+service quantum-server restart
+service quantum-plugin-nec-agent restart
+service quantum-dhcp-agent restart
+service quantum-l3-agent restart
+
+#ip addr add 172.16.100.1/24 dev br-ex
+#ip link set br-ex up
+#route add -net 10.0.0.0/24 gw 172.16.100.192 dev br-ex
+

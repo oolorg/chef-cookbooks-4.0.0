@@ -11,4 +11,17 @@ metadata_port = 8775
 <% if @quantum_plugin == "ovs" %>
 # OVS
 interface_driver = quantum.agent.linux.interface.OVSInterfaceDriver
+
+<% elsif @quantum_plugin == "nec" %>
+#NEC
+interface_driver = quantum.agent.linux.interface.OVSInterfaceDriver
+ovs_use_veth = True
+use_namespaces = <%= @quantum_use_namespaces %>
+
+<% elsif @quantum_plugin == "ryu" %>
+#Ryu
+interface_driver = quantum.agent.linux.interface.OVSInterfaceDriver
+ovs_use_veth = True
+ryu_api_host = <%= @ofc_host %>:<%= @ofc_port %>
+
 <% end %>

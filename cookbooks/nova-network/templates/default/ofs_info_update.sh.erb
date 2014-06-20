@@ -1,0 +1,7 @@
+#!/bin/sh
+
+CLUSTER_NAME=<%= @cluster_name %>
+ENUM_SDN=$(/root/enum_sdn.py ${CLUSTER_NAME})
+
+sed -i 's/SW_NAME=[^=]*$/SW_NAME='"${ENUM_SDN}"'/' /root/ofs_info
+

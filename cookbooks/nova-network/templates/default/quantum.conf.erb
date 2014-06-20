@@ -4,9 +4,7 @@ debug = <%= @quantum_debug %>
 verbose = <%= @quantum_verbose %>
 bind_host = <%= @quantum_ipaddress %>
 bind_port = <%= @quantum_port %>
-<% if @quantum_plugin == "ovs" %>
-core_plugin = quantum.plugins.openvswitch.ovs_quantum_plugin.OVSQuantumPluginV2
-<% end %>
+core_plugin = <%= @neutron_core_plugin %>
 allow_overlapping_ips = <%= @overlapping_ips %>
 use_namespaces = <%= @quantum_namespace %>
 api_paste_config = /etc/quantum/api-paste.ini
@@ -25,6 +23,16 @@ admin_password = <%= @service_pass %>
 # for now, these both need to be set to the same value
 dhcp_lease_time = <%= @dhcp_lease_time %>
 dhcp_lease_duration = <%= @dhcp_lease_time %>
+
+#for_neutron
+<% if @quantum_plugin == "nec" %>
+#api_extensions_path = quantum/plugins/nec/extensions/
+api_extensions_path = /usr/lib/python2.7/dist-packages/quantum/plugins/nec/extensions
+<% end %>
+<% if @lbaas_enabled == "True" %>
+service_plugins = quantum.plugins.services.agent_loadbalancer.plugin.LoadBalancerPlugin
+<% end %>
+#for_neutron
 
 [AGENT]
 root_helper = sudo /usr/bin/quantum-rootwrap /etc/quantum/rootwrap.conf

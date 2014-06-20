@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+
+import httplib
+import base64
+import json
+import sys
+
+# OpenCenter Server URL
+OCS_URL='192.168.1.51'
+#OCS_URL='192.168.1.120'
+# OpenCenter Username
+OCS_USERNAME='admin'
+# OpenCenter Password
+OCS_PASSWORD='password'
+
+########################
+# judge for SDN Device
+def isSDNDevice( backends ):
+  bSDN = "sdn" in backends
+  #bSDN = "agent" in backends
+  bContainer = "container" in backends
+  return (bSDN and (not bContainer))
+
+# judge for NovaCluster
+def isNovaCluster( backends ):
+  bContainer = "container" in backends
+  bChefEnvironment = "chef-environment" in backends
+  return (bContainer and bChefEnvironment)
+
+# Convert NovaClusterName to ID
+def findNovaClusterId( nodes, clusterName ):
+  nc_id = 0;
+  for node in nodes:
+    bContainer = False
+    bChefEnvironment = False
+
+    if (not node.has_key("name")) and (not node.has_key("id")):
+      continue
+    if not node["facts"].has_key("backends"):
+      continue
+
+    judge = isNovaCluster( node["facts"]["backends"] )
+    if judge == True and clusterName == node["name"]:
+        nc_id = int(node["id"])
+        break
+
+  return nc_id
+
+#Judge for ancestor
+def isAncestor( nodes, node_id, parent_id, depth ):
+  depth = depth + 1
+
+  if node_id == parent_id:
+    return True
+
+  if 5 < depth:
+     return False
+
+  for node in nodes:
+    if (not node.has_key("id")) and (not node.has_key("facts")):
+      continue
+    if not node["facts"].has_key("parent_id"):
+      continue
+
+    if node_id == int(node["id"]):
+      if parent_id == int(node["facts"]["parent_id"]):
+        return True
+      else:
+        return isAncestor( nodes, int(node["facts"]["parent_id"]), parent_id, depth)
+  return False
+
+########################
+argvs = sys.argv
+argc = len(argvs)
+if argc < 2 :
+  sys.stderr.write( 'no paramter\n' )
+  sys.exit(1)
+novaCluster = argvs[1]
+
+# Basic Authentication
+auth_info = base64.b64encode ('%s:%s' % (OCS_USERNAME, OCS_PASSWORD))
+header = {'Authorization' : 'Basic %s' % auth_info}
+
+# Get Node List from OpenCenter
+connection = httplib.HTTPSConnection(OCS_URL, 8443)
+connection.request('GET', '/nodes/', '', header)
+response = connection.getresponse()
+#print(response.status, response.reason)
+nodes = json.loads( response.read() )
+connection.close()
+
+if not nodes.has_key("nodes"):
+  sys.stderr.write( 'no nodes\n' )
+  sys.exit(1)
+
+# Search CluserID
+nova_cluster_id = findNovaClusterId( nodes["nodes"], novaCluster )
+if nova_cluster_id == 0:
+  sys.stderr.write( 'invalid cluster name\n' )
+  sys.exit(1)
+
+
+sdn_nodes = []
+for node in nodes["nodes"]:
+
+  if (not node.has_key("facts")) and (not node.has_key("name")) and (not node.has_key("id")):
+    continue
+  if (not node["facts"].has_key("backends")) and (not node["facts"].has_key("parent_id")):
+    continue
+
+  if isSDNDevice(node["facts"]["backends"]):
+    if isAncestor( nodes["nodes"],  int(node["facts"]["parent_id"]), nova_cluster_id, 0 ) == True:
+      sdn_nodes.append( { "id": int(node["id"]), "name": node["name"], "parent_id": int(node["facts"]["parent_id"]) } )
+
+count = len(sdn_nodes)
+for idx, sdn in enumerate(sdn_nodes) :
+  sys.stdout.write( sdn["name"])
+  if idx+1 < count :
+    sys.stdout.write(',')
+
+
+

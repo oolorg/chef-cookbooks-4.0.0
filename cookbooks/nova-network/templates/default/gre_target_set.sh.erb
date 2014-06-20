@@ -1,0 +1,20 @@
+#!/bin/sh
+
+OVS_TARGET_BRIDGE="br-int"
+OVS_TARGET_IP=$1
+
+
+if [ $# -lt 1 ] ; then
+  mycommand=$0
+  echo "Usage: ${mycommand} targetip"
+  echo "ex: ${mycommand} 192.168.1.10"
+  exit 1
+fi
+
+if [ $# -eq 2 ] ; then
+  grenum=$2
+else
+  grenum="0"
+fi
+
+ovs-vsctl --no-wait add-port ${OVS_TARGET_BRIDGE} gre${grenum} -- set Interface gre${grenum} type=gre options:remote_ip=$1

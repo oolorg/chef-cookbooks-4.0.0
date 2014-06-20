@@ -1,0 +1,25 @@
+#!/bin/sh
+
+<%= @neutron_ryu_dir %>/bin/ryu-manager --config-file <%= @neutron_ryu_conf %> &
+sleep 1
+
+service quantum-server restart
+service quantum-plugin-ryu-agent restart
+service quantum-dhcp-agent restart
+service quantum-l3-agent restart
+
+sleep 150
+ip_netns=$(ip netns)
+
+for names in $ip_netns
+do
+  echo "[" ${names} "]"
+  ip netns exec  ${names} ping -c 3 10.0.0.1
+done
+
+service quantum-plugin-ryu-agent restart
+
+#ip addr add 172.16.100.1/24 dev br-ex
+#ip link set br-ex up
+#route add -net 10.0.0.0/24 gw 172.16.100.192 dev br-ex
+

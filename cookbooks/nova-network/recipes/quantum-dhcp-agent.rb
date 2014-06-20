@@ -42,6 +42,7 @@ ks_admin_endpoint =
 quantum_info =
   get_settings_by_recipe("nova-network\\:\\:nova-controller", "quantum")
 
+#for_neutron
 template "/etc/quantum/dhcp_agent.ini" do
   source "dhcp_agent.ini.erb"
   owner "root"
@@ -49,6 +50,11 @@ template "/etc/quantum/dhcp_agent.ini" do
   mode "0640"
   variables(
     "quantum_isolated" => node["quantum"]["isolated_metadata"],
-    "quantum_plugin" => node["quantum"]["plugin"]
+    "quantum_plugin" => node["quantum"]["plugin"],
+    "ofc_host" => node["quantum"]["ryu"]["ofc_host"],
+    "ofc_port" => node["quantum"]["ryu"]["ofc_port"],
+    "quantum_use_namespaces" => node["quantum"]["use_namespaces"]
   )
 end
+#for_neutron
+
