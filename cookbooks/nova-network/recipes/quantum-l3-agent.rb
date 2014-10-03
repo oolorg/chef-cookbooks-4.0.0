@@ -38,13 +38,6 @@ platform_options["quantum_l3_packages"].each do |pkg|
   end
 end
 
-service "quantum-l3-agent" do
-  service_name platform_options["quantum_l3_agent"]
-  supports :status => true, :restart => true
-  action :nothing
-  subscribes :restart, "template[/etc/quantum/quantum.conf]", :delayed
-  subscribes :restart, "template[/etc/l3-agent.ini]", :delayed
-end
 
 execute "create external bridge" do
   command "ovs-vsctl add-br #{node["quantum"]["ovs"]["external_bridge"]}"
@@ -55,7 +48,7 @@ end
 ks_admin_endpoint =
   get_access_endpoint("keystone-api", "keystone", "admin-api")
 quantum_info =
-  get_settings_by_recipe("nova-network\\:\\:nova-controller", "quantum")
+  get_settings_by_recipe("nova-network::nova-controller", "quantum")
 nova_info =
   get_access_endpoint("nova-api-os-compute", "nova", "api")
 metadata_ip =
@@ -96,4 +89,12 @@ template "/etc/quantum/l3_agent.ini" do
   notifies :enable, "service[quantum-l3-agent]", :delayed
 end
 #for_neutron
+
+service "quantum-l3-agent" do
+  service_name platform_options["quantum_l3_agent"]
+  supports :status => true, :restart => true
+  action :nothing
+  subscribes :restart, "template[/etc/quantum/quantum.conf]", :delayed
+  subscribes :restart, "template[/etc/l3-agent.ini]", :delayed
+end
 

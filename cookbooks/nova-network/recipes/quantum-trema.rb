@@ -32,13 +32,36 @@ trema_ss_script_dir = "/opt/data/trema/sliceable_switch/script"
 trema_temp_dir = "/opt/data/trema/trema"
 trema_ss_config = "/opt/data/trema/sliceable_switch/etc/sliceable.conf"
 trema_ss_apache_config = "/etc/apache2/sites-available/sliceable_switch"
+trema_install_option = "--version 0.4.7"
 trema_apps_branch = "master"
 trema_log_level="info"
 
-execute "install_trema" do
-  command "gem1.8 install trema"
-  action :run
-  not_if { ::File.exists?("/usr/local/bin/trema") }
+bash "install_ruby" do
+  code <<-EOH
+    curl -L https://get.rvm.io | bash -s stable --autolibs=enable
+    /usr/local/rvm/bin/rvm get head
+    /usr/local/rvm/bin/rvm reload
+    /usr/local/rvm/bin/rvm install 1.9.3
+    EOH
+  not_if { ::File.exists?(trema_ss_config) }
+end
+
+bash "update_gems" do
+  code <<-EOH
+    /usr/local/rvm/bin/rvm alias create default 1.9.3
+    GEM_DIR=$(/usr/local/rvm/bin/rvm gemdir)
+    ${GEM_DIR}/wrappers/gem install rubygems-update -v 1.8.25
+    ${GEM_DIR}/wrappers/update_rubygems
+    EOH
+  not_if { ::File.exists?(trema_ss_config) }
+end
+
+bash "install_trema" do
+  code <<-EOH
+    GEM_DIR=$(/usr/local/rvm/bin/rvm gemdir)
+    ${GEM_DIR}/wrappers/gem install trema #{trema_install_option}
+    EOH
+  not_if "ps -ef | grep -v grep | grep trema"
 end
 
 directory trema_dir do
@@ -95,6 +118,9 @@ bash "install_slicable_switch" do
     git clone https://github.com/trema/apps.git #{trema_apps_dir}
     cd #{trema_apps_dir}
     git checkout #{trema_apps_branch}
+    GEM_DIR=$(/usr/local/rvm/bin/rvm gemdir)
+    PATH_ORG=${PATH}
+    export PATH=${GEM_DIR}/wrappers:${PATH}
     make -C #{trema_dir}/apps/topology
     make -C #{trema_dir}/apps/flow_manager
     make -C #{trema_dir}/apps/sliceable_switch
@@ -114,6 +140,7 @@ bash "install_slicable_switch" do
     chmod ugo+rwx #{trema_ss_script_dir}/*
     chmod ugo+rwx #{trema_ss_db_dir}/*
     chmod ugo+rwx #{trema_ss_etc_dir}/*
+    export PATH=${PATH_ORG}
     EOH
   not_if { ::File.exists?(trema_ss_config) }
 end
@@ -143,10 +170,11 @@ end
 
 bash "start_trema" do
   code <<-EOH
+    GEM_DIR=$(/usr/local/rvm/bin/rvm gemdir)
     /usr/sbin/service apache2 restart
-    LOGGING_LEVEL=#{trema_log_level} TREMA_TMP=#{trema_temp_dir} /usr/local/bin/trema run -d -c #{trema_ss_config}
+    LOGGING_LEVEL=#{trema_log_level} TREMA_TMP=#{trema_temp_dir} ${GEM_DIR}/wrappers/trema run -d -c #{trema_ss_config}
     EOH
-  not_if "ps -ef  | grep -v grep | grep '/usr/loca/bin/trema'"
+  not_if "ps -ef  | grep -v grep | grep 'trema'"
 end
 
 #trema + OFS

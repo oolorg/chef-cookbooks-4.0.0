@@ -191,9 +191,6 @@ default["quantum"]["trema"]["packages"] = [
   "git",
   "gcc",
   "make",
-  "ruby1.8",
-  "ruby1.8-dev",
-  "rubygems1.8",
   "libpcap-dev",
   "libsqlite3-dev",
   "libglib2.0-dev"

@@ -20,8 +20,8 @@ bash "install_ovs" do
   code <<-EOH
     mkdir #{ovs_work_dir}
     cd #{ovs_work_dir}
-    #wget http://openvswitch.org/releases/openvswitch-#{ovs_version}.tar.gz
-    wget http://172.16.1.232/openvswitch/openvswitch-#{ovs_version}.tar.gz
+    wget http://openvswitch.org/releases/openvswitch-#{ovs_version}.tar.gz
+    #wget http://172.16.1.232/openvswitch/openvswitch-#{ovs_version}.tar.gz
     tar zxf openvswitch-#{ovs_version}.tar.gz
     cd openvswitch-#{ovs_version}/
     fakeroot debian/rules binary

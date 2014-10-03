@@ -1,6 +1,7 @@
 #!/bin/sh
 
-LOGGING_LEVEL=<%= @neutron_trema_log_level %> TREMA_TMP=<%= @neutron_trema_temp_dir %> /usr/local/bin/trema run -d -c <%= @neutron_trema_ss_config %>
+GEM_DIR=$(/usr/local/rvm/bin/rvm gemdir)
+LOGGING_LEVEL=<%= @neutron_trema_log_level %> TREMA_TMP=<%= @neutron_trema_temp_dir %> ${GEM_DIR}/wrappers/trema run -d -c <%= @neutron_trema_ss_config %>
 sleep 10
 service quantum-server restart
 service quantum-plugin-nec-agent restart
